@@ -61,6 +61,7 @@ function Overview({ currentProduct, currentProductID, reviewData }) {
       responseType: 'json',
     })
       .then((response) => {
+        console.log(response.data);
         setStyles(response.data);
         setSelectedStyle(response.data.results[0]);
       })
