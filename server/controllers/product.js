@@ -43,24 +43,29 @@ module.exports = {
     pages = Math.ceil(productTotal/count);
     let offset = 0;
     offset = count * page - count;
-    const item = await client.query(`SELECT * FROM product ORDER BY id ASC LIMIT ${count} OFFSET ${offset}`);
-    res.send(item.rows);
+    const items = await client.query(`SELECT * FROM product ORDER BY id ASC LIMIT ${count} OFFSET ${offset}`);
+    res.send(items.rows);
   },
 
   // gets the styles of a product from the database using the given product id query
   async getProductStyles(req, res) {
-    var returnObject = {};
-    returnObject.product_id = req.query.product_id;
-    var results = [];
+    let styleObject = {};
+    styleObject.product_id = req.query.product_id;
+    let results = [];
     const style = await client.query(`SELECT id as style_id, name, original_price, sale_price, default_style as "default?" FROM style WHERE id_product = ${req.query.product_id}`);
+
     for (let i = 0; i < style.rows.length; i++) {
       let newObj = {...style.rows[i]};
       let styleId = style.rows[i].style_id;
       // add the photos for the style
       const photo = await client.query(`SELECT thumbnail_url, url FROM style LEFT JOIN photo ON photo.id_style=style.id WHERE id_style = ${styleId}`);
       let photoArray = [];
+
       for (let y = 0; y < photo.rows.length; y++) {
-        photoArray.push(photo.rows[y]);
+        let photoObj = {};
+        photoObj['thumbnail_url'] = photo.rows[y].thumbnail_url;
+        photoObj['url'] = photo.rows[y].url;
+        photoArray.push(photoObj);
       }
       newObj['photos'] = photoArray;
       // add the sku quantity and size for the style
@@ -76,19 +81,19 @@ module.exports = {
       }
       results.push(newObj);
     }
-    returnObject.results = results;
-    res.send(returnObject);
+    styleObject.results = results;
+    res.send(styleObject);
   },
 
   // gets array of related product IDs
   async getRelatedProducts(req, res) {
-    if (req.query.product_id !== 'undefined') {
+    if (req.query.product_id !== undefined) {
       const related = await client.query(`SELECT related_products.related_product_id FROM product LEFT JOIN related_products ON related_products.current_product_id=product.id WHERE product.id=${req.query.product_id}`);
-      let idArray = [];
-      for (var i = 0; i < related.rows.length; i++) {
-        idArray.push(related.rows[i]['related_product_id']);
+      let relatedIDs = [];
+      for (let i = 0; i < related.rows.length; i++) {
+        relatedIDs.push(related.rows[i]['related_product_id']);
       }
-      res.send(idArray);
+      res.send(relatedIDs);
     } else {
       res.sendStatus(500);
     }
