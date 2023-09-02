@@ -3,7 +3,8 @@ const router = express.Router();
 const controller = require('./controllers');
 const db = require('./db.js')
 
-router.get('/api/product', controller.products.getProduct);
-router.get('/api/product/styles', controller.overView.getProductStyles);
+router.get('/products', controller.products.getProducts);
+router.get('/products/styles', controller.products.getProductStyles);
+router.get('/products/related', controller.products.getRelatedProducts);
 
 module.exports = router;

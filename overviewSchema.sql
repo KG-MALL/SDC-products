@@ -6,7 +6,7 @@ CREATE TABLE product (
   slogan TEXT NOT NULL,
   description TEXT NOT NULL,
   category VARCHAR(32) NOT NULL,
-  default_price  VARCHAR(16) NOT NULL,
+  default_price  DECIMAL NOT NULL,
   PRIMARY KEY (id)
 );
 
@@ -22,8 +22,8 @@ CREATE TABLE style (
   id SERIAL NOT NULL,
   id_product INTEGER NOT NULL,
   name VARCHAR(64) NOT NULL,
-  sale_price VARCHAR(16) NULL DEFAULT NULL,
-  original_price  VARCHAR(16) NOT NULL,
+  sale_price DECIMAL NULL DEFAULT NULL,
+  original_price DECIMAL NOT NULL,
   default_style BOOLEAN NOT NULL,
   PRIMARY KEY (id)
 );
@@ -36,7 +36,6 @@ CREATE TABLE photo (
   PRIMARY KEY (id)
 );
 
-
 CREATE TABLE sku (
   id SERIAL NOT NULL,
   id_style INTEGER NOT NULL,
@@ -45,14 +44,12 @@ CREATE TABLE sku (
   PRIMARY KEY (id)
 );
 
-
 CREATE TABLE related_products (
   id SERIAL NOT NULL,
   current_product_id INTEGER NOT NULL,
   related_product_id INTEGER NOT NULL,
   PRIMARY KEY (id)
 );
-
 
 ALTER TABLE feature ADD FOREIGN KEY (id_product) REFERENCES product (id);
 ALTER TABLE style ADD FOREIGN KEY (id_product) REFERENCES product (id);

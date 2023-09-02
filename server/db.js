@@ -9,8 +9,6 @@ dotenv.config();
             password: process.env.PASSWORD,
             port: 5432
         });
-
         client.connect();
-
 
 exports.client = client;
