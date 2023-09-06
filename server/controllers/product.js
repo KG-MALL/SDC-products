@@ -49,6 +49,7 @@ module.exports = {
 
   // gets the styles of a product from the database using the given product id query
   async getProductStyles(req, res) {
+    if (req.query.product_id !== undefined) {
     let styleObject = {};
     styleObject.product_id = req.query.product_id;
     let results = [];
@@ -83,6 +84,9 @@ module.exports = {
     }
     styleObject.results = results;
     res.send(styleObject);
+  } else {
+    res.sendStatus(500);
+  }
   },
 
   // gets array of related product IDs
