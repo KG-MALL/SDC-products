@@ -1,11 +1,11 @@
-const {client} = require('../db.js');
+const {pool} = require('../db.js');
 
 module.exports = {
   // gets one product from the database using the given product id parameter or gets all products if no product id parameter
   async getProducts(req, res) {
     // if product id query parameter is given, return the one product
     if (req.query.product_id !== undefined) {
-      const product = await client.query(
+      const product = await pool.query(
         `SELECT * FROM product
         INNER JOIN feature on feature.id_product=product.id
         WHERE product.id=${req.query.product_id}`
@@ -43,7 +43,7 @@ module.exports = {
     }
     // calculate the offset
     let offset = count * page - count;
-    const items = await client.query(`SELECT * FROM product ORDER BY id ASC LIMIT ${count} OFFSET ${offset}`);
+    const items = await pool.query(`SELECT * FROM product ORDER BY id ASC LIMIT ${count} OFFSET ${offset}`);
     res.send(items.rows);
   },
 
@@ -54,9 +54,10 @@ module.exports = {
       product_id: req.query.product_id,
       results: []
     };
-    const style = await client.query(
+    const style = await pool.query(
       `SELECT style.id as style_id, name, original_price, sale_price, default_style, photo.id as photo_id,
-      thumbnail_url, url, sku.id as sku_id, sku.quantity as quantity, sku.size as size FROM style
+      thumbnail_url, url,
+      sku.id as sku_id, sku.quantity as quantity, sku.size as size FROM style
       INNER JOIN photo ON photo.id_style=style.id
       INNER JOIN sku ON sku.id_style=style.id
       WHERE id_product = ${req.query.product_id}
@@ -118,7 +119,7 @@ module.exports = {
   // gets array of related product IDs
   async getRelatedProducts(req, res) {
     if (req.query.product_id !== undefined) {
-      const related = await client.query(`SELECT related_products.related_product_id FROM product LEFT JOIN related_products ON related_products.current_product_id=product.id WHERE product.id=${req.query.product_id}`);
+      const related = await pool.query(`SELECT related_products.related_product_id FROM product LEFT JOIN related_products ON related_products.current_product_id=product.id WHERE product.id=${req.query.product_id}`);
       let relatedIDs = [];
       for (let i = 0; i < related.rows.length; i++) {
         relatedIDs.push(related.rows[i]['related_product_id']);
