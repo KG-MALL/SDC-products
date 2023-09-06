@@ -45,10 +45,8 @@ CREATE TABLE sku (
 );
 
 CREATE TABLE related_products (
-  id SERIAL NOT NULL,
   current_product_id INTEGER NOT NULL,
-  related_product_id INTEGER NOT NULL,
-  PRIMARY KEY (id)
+  related_product_id INTEGER NOT NULL
 );
 
 ALTER TABLE feature ADD FOREIGN KEY (id_product) REFERENCES product (id);
