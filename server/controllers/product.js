@@ -5,44 +5,44 @@ module.exports = {
   async getProducts(req, res) {
     // if product id query parameter is given, return the one product
     if (req.query.product_id !== undefined) {
-      const item = await client.query(`SELECT * FROM product WHERE product.id=${req.query.product_id}`);
-      let returnObj = {...item.rows[0]};
-      const features = await client.query(`SELECT feature, value FROM product LEFT JOIN feature on feature.id_product=product.id WHERE product.id=${req.query.product_id}`);
-      let featuresArray = [];
-      for (let i = 0; i < features.rows.length; i++) {
-        let newObj = {
-          feature: features.rows[i].feature,
-          value: features.rows[i].value
-        }
-        featuresArray.push(newObj);
+      const product = await client.query(
+        `SELECT * FROM product
+        INNER JOIN feature on feature.id_product=product.id
+        WHERE product.id=${req.query.product_id}`
+      );
+      let productObj = {
+        id: product.rows[0].id,
+        name: product.rows[0].name,
+        slogan: product.rows[0].slogan,
+        description: product.rows[0].description,
+        category: product.rows[0].category,
+        default_price: product.rows[0].default_price,
+        features: []
+      };
+      for (let i = 0; i < product.rows.length; i++) {
+        productObj['features'].push({
+          feature: product.rows[i].feature,
+          value: product.rows[i].value
+        });
       }
-      returnObj['features'] = featuresArray;
-          res.send(returnObj);
+      res.send(productObj);
       return;
     }
     // return all products based on the count and page parameters given
-    let count = 0;
-    let page = 0;
-    let productTotal = 0;
-    let pages = 0;
     // if no count parameter provided, set to 5
     if (req.query.count === undefined) {
-      count = 5;
+      var count = 5;
     } else {
-      count = req.query.count;
+      var count = req.query.count;
     }
     // if no page parameter provided, set to 1
     if (req.query.page === undefined) {
-      page = 1;
+      var page = 1;
     } else {
-      page = req.query.page;
+      var page = req.query.page;
     }
-    // get calculate the number of pages and the offset based on product table's row count
-    let productCountData = await client.query(`SELECT COUNT(id) FROM product`);
-    productTotal = productCountData.rows[0].count;
-    pages = Math.ceil(productTotal/count);
-    let offset = 0;
-    offset = count * page - count;
+    // calculate the offset
+    let offset = count * page - count;
     const items = await client.query(`SELECT * FROM product ORDER BY id ASC LIMIT ${count} OFFSET ${offset}`);
     res.send(items.rows);
   },
@@ -50,39 +50,65 @@ module.exports = {
   // gets the styles of a product from the database using the given product id query
   async getProductStyles(req, res) {
     if (req.query.product_id !== undefined) {
-    let styleObject = {};
-    styleObject.product_id = req.query.product_id;
-    let results = [];
-    const style = await client.query(`SELECT id as style_id, name, original_price, sale_price, default_style as "default?" FROM style WHERE id_product = ${req.query.product_id}`);
+    let styleObject = {
+      product_id: req.query.product_id,
+      results: []
+    };
+    const style = await client.query(
+      `SELECT style.id as style_id, name, original_price, sale_price, default_style, photo.id as photo_id,
+      thumbnail_url, url, sku.id as sku_id, sku.quantity as quantity, sku.size as size FROM style
+      INNER JOIN photo ON photo.id_style=style.id
+      INNER JOIN sku ON sku.id_style=style.id
+      WHERE id_product = ${req.query.product_id}
+      ORDER BY style.id ASC, photo.id ASC, sku.id ASC`
+    );
+
+    // to keep track of the style ID we are currently on
+    let lastUniqueStyleID = -1;
+    let lastUniquePhotoID = -1;
+    let lastUniqueSKUID = -1;
 
     for (let i = 0; i < style.rows.length; i++) {
-      let newObj = {...style.rows[i]};
-      let styleId = style.rows[i].style_id;
-      // add the photos for the style
-      const photo = await client.query(`SELECT thumbnail_url, url FROM style LEFT JOIN photo ON photo.id_style=style.id WHERE id_style = ${styleId}`);
-      let photoArray = [];
 
-      for (let y = 0; y < photo.rows.length; y++) {
-        let photoObj = {};
-        photoObj['thumbnail_url'] = photo.rows[y].thumbnail_url;
-        photoObj['url'] = photo.rows[y].url;
-        photoArray.push(photoObj);
-      }
-      newObj['photos'] = photoArray;
-      // add the sku quantity and size for the style
-      const sku = await client.query(`SELECT sku.id, sku.quantity as quantity, sku.size as size FROM style LEFT JOIN sku ON sku.id_style=style.id WHERE id_style = ${styleId}`);
-      newObj['skus'] = {};
-      let skuObj = {};
-      for (let z = 0; z < sku.rows.length; z++) {
-        skuObj[`${sku.rows[z].id}`] = {
-          quantity: sku.rows[z].quantity,
-          size: sku.rows[z].size
+      // create a new object on the first unique style id
+      if (lastUniqueStyleID !== style.rows[i].style_id) {
+      var newObj = {
+        style_id: style.rows[i].style_id,
+        name: style.rows[i].name,
+        original_price:  style.rows[i].original_price,
+        sale_price:  style.rows[i].sale_price,
+        'default?': style.rows[i].default_style,
+        photos: [],
+        skus: {}
       };
-      newObj['skus'] = {...skuObj};
-      }
-      results.push(newObj);
+      lastUniqueStyleID = style.rows[i].style_id;
     }
-    styleObject.results = results;
+
+      // if the photo id is unique, add photos to newObj
+      if (lastUniquePhotoID !== style.rows[i].photo_id) {
+        newObj['photos'].push({
+          thumbnail_url: style.rows[i].thumbnail_url,
+          url: style.rows[i].url
+        });
+        lastUniquePhotoID = style.rows[i].photo_id;
+      }
+
+      // if the sku id is unique, add sku data to newObj
+      if (lastUniqueSKUID < style.rows[i].sku_id) {
+        newObj['skus'][`${style.rows[i].sku_id}`] = {
+          quantity: style.rows[i].quantity,
+          size: style.rows[i].size
+        };
+        lastUniqueSKUID = style.rows[i].sku_id;
+      }
+
+      // if the next style id is unique, push newObj to the results
+      if (i+1 < style.rows.length && lastUniqueStyleID !== style.rows[i+1].style_id) {
+        styleObject['results'].push(newObj);
+      }
+    }
+    // push the last newObj to results
+    styleObject['results'].push(newObj);
     res.send(styleObject);
   } else {
     res.sendStatus(500);
