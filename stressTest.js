@@ -2,8 +2,11 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 
 export const options = {
-  vus: 1000,
-  duration: '30s',
+  stages: [
+    { duration: '10s', target: 300 },
+    { duration: '10s', target: 1000 },
+    { duration: '10s', target: 0 },
+  ],
 };
 
 // get request to product endpoint
