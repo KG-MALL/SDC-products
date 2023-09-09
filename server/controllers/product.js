@@ -1,8 +1,11 @@
 const {pool, redis} = require('../db.js');
+require('dotenv').config();
+
+// this file uses redis for caching
 module.exports = {
-loader(req, res) {
-res.send('loaderio-e4e9c5317c256692cb394fbef2dea680');
-},
+// loader(req, res) {
+// res.send(`${process.env.LOADER}`);
+// },
 
 
 // gets one product from the database using the given product id parameter or gets all products if no product id parameter
