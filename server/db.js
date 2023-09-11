@@ -13,20 +13,20 @@ dotenv.config();
         pool.connect();
 
 
-const redis = new Redis( {host:process.env.REDISHOST, port:6379, connectTimeout: 10000 } );
-redis.on('connect', () => {
-  console.log('Redis client is connecting.');
-});
+// const redis = new Redis( {host:process.env.REDISHOST, port:6379, connectTimeout: 10000 } );
+// redis.on('connect', () => {
+//   console.log('Redis client is connecting.');
+// });
 
-redis.on('ready', () => {
-  console.log('Redis client is connected.');
-});
+// redis.on('ready', () => {
+//   console.log('Redis client is connected.');
+// });
 
-redis.on('reconnecting', () => {
-  console.log('Redis client is reconnecting.');
-});
+// redis.on('reconnecting', () => {
+//   console.log('Redis client is reconnecting.');
+// });
 
-redis.on('error', (err) => console.log('Redis client has error', err));
+// redis.on('error', (err) => console.log('Redis client has error', err));
 
 exports.pool = pool;
 // exports.redis = redis;
